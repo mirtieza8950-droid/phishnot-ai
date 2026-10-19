@@ -108,6 +108,38 @@ flowchart LR
 
 ---
 
+## Models used
+
+### Email classification ensemble
+
+| Model | Base checkpoint | Framework | Weight | Role |
+|---|---|---|---|---|
+| **Logistic Regression** | tf-idf n-grams | scikit-learn | 0.15 | linear baseline on surface cues |
+| **Random Forest** (200 trees) | tf-idf n-grams | scikit-learn | 0.15 | non-linear n-gram interactions |
+| **DeBERTa-v3-small** + dense head | `microsoft/deberta-v3-small` | PyTorch + HuggingFace | 0.40 | contextual semantics; LoRA-adaptable |
+| **DistilRoBERTa** + dense head | `distilroberta-base` | PyTorch + HuggingFace | 0.30 | lighter semantic second opinion; LoRA-adaptable |
+| **XGBoost meta-learner** | stacked 12-dim probability vector | XGBoost | final arbiter | learns per-input model reliability |
+
+The meta-learner consumes the four models' probability vectors and issues the final verdict; it is the component retrained weekly by the self-learning pipeline. DeBERTa and DistilRoBERTa can carry **PEFT LoRA adapters** (rank 8, α 16, targeting `query`/`value` projections) trained on confirmed feedback.
+
+### URL classification path
+
+| Model | Base | Role |
+|---|---|---|
+| **GradientBoostingClassifier** | ~20 lexical URL features (scikit-learn) | fast lexical triage |
+| **URL transformer** | `distilroberta-base` fine-tuned on URL text | contextual URL semantics (96.3% acc, 0.9939 AUC) |
+
+### Supporting models
+
+| Task | Model | Notes |
+|---|---|---|
+| Analyst chat | **Llama 3.3 70B** (`llama-3.3-70b-versatile`) via Groq | grounded in scan context; prompt-injection firewall in front |
+| Vision forensics | **Qwen2-VL-2B-Instruct** (4-bit NF4) | lazy-loaded on first screenshot call |
+| Vishing transcription | **Whisper** — Groq `whisper-large-v3-turbo` → OpenAI `whisper-1` → local `openai/whisper-base` | provider chain with local fallback |
+| Explainability | **LIME** | word-level attributions on the classical models |
+
+---
+
 ## Model performance
 
 Ensemble on a held-out evaluation set (`eval_results.json`, 500 samples):

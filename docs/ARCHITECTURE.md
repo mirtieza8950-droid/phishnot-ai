@@ -48,12 +48,12 @@ How PhishNot AI is put together: inference pipeline, self-learning loop, data mo
 
 Four base models score each email, blended with weights read from `models/ensemble_config.pkl`:
 
-| Component | Type | Weight | Features |
-|---|---|---|---|
-| Logistic Regression | linear, calibrated | 0.15 | tf-idf n-grams |
-| Random Forest | tree ensemble | 0.15 | tf-idf n-grams |
-| DeBERTa-v3-small | transformer + dense head | 0.40 | token semantics |
-| DistilRoBERTa | transformer + dense head | 0.30 | token semantics |
+| Component | Type | Base checkpoint | Weight | Features |
+|---|---|---|---|---|
+| Logistic Regression | linear, calibrated | — | 0.15 | tf-idf n-grams |
+| Random Forest (200 trees) | tree ensemble | — | 0.15 | tf-idf n-grams |
+| DeBERTa-v3-small | transformer + dense head | `microsoft/deberta-v3-small` | 0.40 | token semantics |
+| DistilRoBERTa | transformer + dense head | `distilroberta-base` | 0.30 | token semantics |
 
 All four emit a 3-class probability vector (`ham`, `phishing`, `spam`). Base probabilities are blended:
 
@@ -80,6 +80,17 @@ If `models/deberta_lora/` and `models/distilroberta_lora/` exist, PEFT adapters 
 ### 2.5 URL path
 
 URLs take a separate branch: lexical features (`app/utils/url_features.py` → `url_phishing_model.pkl`, gradient boosting) plus a dedicated **URL transformer** (DistilRoBERTa architecture fine-tuned on URL text; 96.3% accuracy / 0.9939 AUC). Results also flow through a domain whitelist (`models/domain_whitelist.json`) and Tranco top-list reputation check.
+
+### 2.6 Supporting models
+
+| Task | Model | Serving |
+|---|---|---|
+| Analyst chat | Llama 3.3 70B (`llama-3.3-70b-versatile`) | Groq API; gated by the prompt firewall |
+| Vision forensics | Qwen2-VL-2B-Instruct, 4-bit NF4 quantised | local, lazy-loaded on first screenshot request |
+| Vishing transcription | Whisper | provider chain: Groq `whisper-large-v3-turbo` → OpenAI `whisper-1` → local `openai/whisper-base` |
+| Explainability | LIME | in-process, wrapped around the classical models |
+
+LoRA adapters (`app/services/ensemble_engine.py`, trained by `train_lora_adapters.py`) use PEFT with rank 8, α 16, dropout 0.1, targeting the `query`/`value` projections of both transformers, trained with 3-way labels on confirmed feedback.
 
 ---
 
