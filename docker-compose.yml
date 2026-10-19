@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  phishnot:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models
+      - ./phishguard.db:/app/phishguard.db
+      - ./feedback.db:/app/feedback.db
+    environment:
+      # ── Required secrets — must be set in host environment or .env ──────────
+      - SESSION_SECRET=${SESSION_SECRET:?SESSION_SECRET must be set}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:?ADMIN_PASSWORD must be set}
+      - ADMIN_EMAIL=${ADMIN_EMAIL:-}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
+      # ── OAuth ────────────────────────────────────────────────────────────────
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - MICROSOFT_CLIENT_ID=${MICROSOFT_CLIENT_ID:-}
+      - MICROSOFT_CLIENT_SECRET=${MICROSOFT_CLIENT_SECRET:-}
+      - OAUTH_REDIRECT_URI=${OAUTH_REDIRECT_URI:-}
+      # ── AI & threat intel keys (optional) ────────────────────────────────────
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - VT_API_KEY=${VT_API_KEY:-}
+      - OTX_API_KEY=${OTX_API_KEY:-}
+      - PHISHTANK_APP_KEY=${PHISHTANK_APP_KEY:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s

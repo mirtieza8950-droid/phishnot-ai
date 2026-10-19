@@ -1,0 +1,50 @@
+# ── Secrets ────────────────────────────────────────────────────────────────────
+.env
+.claude/
+*.pem
+*.key
+
+# ── Python ─────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# ── Node / frontend �────────────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# ── Model weights & datasets (too large for git — regenerate via training) ─────
+models/*.pth
+models/*.pkl
+models/*.log
+models/_launcher.bat
+models/lime_explanation_*.html
+datasets/
+data/*.csv
+final_data_balanced.csv
+validation_data.csv
+hf_cache/
+
+# ── Runtime state (per-instance data) ──────────────────────────────────────────
+*.db
+audit.log
+eval_results.json
+training_progress.json
+test_output.txt
+test_screenshot.png
+
+# ── Build artifacts ────────────────────────────────────────────────────────────
+build/
+dist/
+
+# ── OS / editor ────────────────────────────────────────────────────────────────
+Thumbs.db
+.DS_Store
+.idea/
+.vscode/
+*.spec
